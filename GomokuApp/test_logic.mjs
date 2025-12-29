@@ -1,5 +1,5 @@
-// test_logic.js
-const { createBoard, checkWin, getBestMove, BOARD_SIZE } = require('./src/game/GomokuLogic');
+// test_logic.mjs
+import { createBoard, checkWin, getBestMove, BOARD_SIZE } from './src/game/GomokuLogic.js';
 
 const runTests = () => {
     console.log("Running Gomoku Logic Tests...");
