@@ -9,6 +9,7 @@ const STAR_POINTS = {
     15: [[3, 3], [3, 11], [7, 7], [11, 3], [11, 11]],
     19: [[3, 3], [3, 9], [3, 15], [9, 3], [9, 9], [9, 15], [15, 3], [15, 9], [15, 15]]
 };
+const STAR_POINT_SIZE = 6;
 
 const Board = () => {
     const { state, dispatch } = useContext(GameContext);
@@ -32,6 +33,7 @@ const Board = () => {
     };
 
     const starPoints = STAR_POINTS[boardSize] || [];
+    const starPointLookup = new Set(starPoints.map(([r, c]) => `${r}-${c}`));
 
     return (
         <View style={styles.container}>
@@ -66,20 +68,6 @@ const Board = () => {
                     />
                 ))}
 
-                {/* Star Points */}
-                {starPoints.map(([r, c], i) => (
-                    <View
-                        key={`star-${i}`}
-                        style={[
-                            styles.starPoint,
-                            {
-                                top: r * cellSize + cellSize / 2 - 3, // 3 is half of 6px size
-                                left: c * cellSize + cellSize / 2 - 3,
-                            }
-                        ]}
-                    />
-                ))}
-
                 {/* Cells */}
                 {board.map((row, rIndex) => (
                     <View key={rIndex} style={styles.row}>
@@ -90,6 +78,21 @@ const Board = () => {
                                 onPress={() => handlePress(rIndex, cIndex)}
                                 activeOpacity={1}
                             >
+                                {starPointLookup.has(`${rIndex}-${cIndex}`) && (
+                                    <View
+                                        pointerEvents="none"
+                                        style={[
+                                            styles.starPoint,
+                                            {
+                                                width: STAR_POINT_SIZE,
+                                                height: STAR_POINT_SIZE,
+                                                borderRadius: STAR_POINT_SIZE / 2,
+                                                top: (cellSize - STAR_POINT_SIZE) / 2,
+                                                left: (cellSize - STAR_POINT_SIZE) / 2,
+                                            }
+                                        ]}
+                                    />
+                                )}
                                 <Stone color={cell} size={cellSize * 0.8} />
                             </TouchableOpacity>
                         ))}
@@ -131,11 +134,8 @@ const styles = StyleSheet.create({
     },
     starPoint: {
         position: 'absolute',
-        width: 6,
-        height: 6,
-        borderRadius: 3,
         backgroundColor: '#5d4037',
-        zIndex: 1,
+        zIndex: 0,
     }
 });
 
