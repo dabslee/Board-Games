@@ -52,15 +52,16 @@ const StartScreen = ({ navigation }) => {
                 const response = await fetch(`${BACKEND_URL}/game`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ size: boardSize })
+                    body: JSON.stringify({ size: boardSize, color: aiColor })
                 });
                 const data = await response.json();
                 if (response.ok) {
                     setModalMode('none');
-                    navigation.navigate('OnlineGame', {
+                    navigation.navigate('Game', {
+                        mode: 'Online',
                         code: data.game_code,
-                        playerColor: data.color, // 'black'
-                        playerId: data.player_id, // 'host'
+                        playerColor: data.color,
+                        playerId: data.player_id,
                     });
                 } else {
                     Alert.alert("Error", "Failed to create game");
@@ -99,10 +100,11 @@ const StartScreen = ({ navigation }) => {
             const data = await response.json();
             if (response.ok) {
                 setModalMode('none');
-                navigation.navigate('OnlineGame', {
+                navigation.navigate('Game', {
+                    mode: 'Online',
                     code: joinCode.toUpperCase(),
-                    playerColor: data.color, // 'white'
-                    playerId: data.player_id, // 'guest'
+                    playerColor: data.color,
+                    playerId: data.player_id,
                 });
             } else {
                 Alert.alert("Error", data.error || "Failed to join game");
@@ -208,9 +210,22 @@ const StartScreen = ({ navigation }) => {
                             )}
 
                             {mode === 'Online' && (
-                                <Text style={{marginBottom: 10, color: '#666'}}>
-                                    You will create a game and receive a code to share.
-                                </Text>
+                                <>
+                                    <View style={styles.optionRow}>
+                                        <Text style={styles.label}>Your Color: </Text>
+                                        <View style={styles.options}>
+                                            <TouchableOpacity onPress={() => setAiColor('black')} style={[styles.optionBtn, aiColor === 'black' && styles.selected]}>
+                                                <Text>Black</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity onPress={() => setAiColor('white')} style={[styles.optionBtn, aiColor === 'white' && styles.selected]}>
+                                                <Text>White</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <Text style={{marginBottom: 10, color: '#666'}}>
+                                        You will create a game and receive a code to share.
+                                    </Text>
+                                </>
                             )}
 
                             <View style={styles.actionButtons}>

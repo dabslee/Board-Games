@@ -36,15 +36,19 @@ def create_game():
     if size not in [9, 13, 15, 19]:
         size = 15
 
+    color = data.get('color', 'black')
+    if color not in ['black', 'white']:
+        color = 'black'
+
     code = generate_code()
     GAMES[code] = {
         "board": create_board(size),
         "turn": "black",
-        "players": {"black": "host"},
+        "players": {color: "host"},
         "status": "waiting",
         "winner": None
     }
-    return jsonify({"game_code": code, "player_id": "host", "color": "black"})
+    return jsonify({"game_code": code, "player_id": "host", "color": color})
 
 @app.route('/game/<code>/join', methods=['POST'])
 def join_game(code):
@@ -55,10 +59,13 @@ def join_game(code):
     if game["status"] != "waiting":
         return jsonify({"error": "Game already started or finished"}), 400
 
-    game["players"]["white"] = "guest"
+    host_color = list(game["players"].keys())[0]
+    guest_color = 'white' if host_color == 'black' else 'black'
+
+    game["players"][guest_color] = "guest"
     game["status"] = "playing"
 
-    return jsonify({"player_id": "guest", "color": "white"})
+    return jsonify({"player_id": "guest", "color": guest_color})
 
 @app.route('/game/<code>', methods=['GET'])
 def get_game(code):
@@ -113,10 +120,8 @@ def make_move(code):
         return jsonify({"error": "Game not playing"}), 400
 
     current_color = game["turn"]
-    expected_player_role = "host" if current_color == "black" else "guest"
-
-    # Simple role check (in real app use tokens)
-    if player_id != expected_player_role:
+    # Verify player_id maps to current_color
+    if game["players"].get(current_color) != player_id:
         return jsonify({"error": "Not your turn"}), 403
 
     if game["board"][row][col] is not None:

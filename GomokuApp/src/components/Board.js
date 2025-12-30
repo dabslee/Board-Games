@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, useWindowDimensions, Alert } from 'react-native';
 import Stone from './Stone';
 import { GameContext } from '../context/GameContext';
 
@@ -11,7 +11,7 @@ const STAR_POINTS = {
 };
 const STAR_POINT_SIZE = 6;
 
-const Board = () => {
+const Board = ({ isOnline, onlineParams, backendUrl }) => {
     const { state, dispatch } = useContext(GameContext);
     const { board, winner, currentPlayer, gameMode, aiConfig, history, currentTurn } = state;
     const boardSize = board.length;
@@ -26,8 +26,45 @@ const Board = () => {
     const gridSize = (boardSize - 1) * cellSize;
     const gridOffset = cellSize / 2;
 
-    const handlePress = (row, col) => {
+    const handlePress = async (row, col) => {
         if (winner || board[row][col]) return;
+
+        if (isOnline) {
+             const { code, playerColor, playerId, status } = onlineParams;
+             if (status !== 'playing') return;
+             if (currentPlayer !== playerColor) return; // Not my turn
+
+             try {
+                const response = await fetch(`${backendUrl}/game/${code}/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player_id: playerId,
+                        row,
+                        col
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    dispatch({
+                        type: 'SYNC_GAME',
+                        payload: {
+                            board: data.board,
+                            currentPlayer: data.turn,
+                            winner: data.winner
+                        }
+                    });
+                } else {
+                    // const err = await response.json();
+                    // Alert.alert("Error", err.error || "Move failed");
+                }
+            } catch (e) {
+                // Alert.alert("Error", "Network error");
+            }
+             return;
+        }
+
         if (gameMode === 'PvC' && currentPlayer === aiConfig.color) return;
         dispatch({ type: 'MAKE_MOVE', payload: { row, col } });
     };
@@ -74,6 +111,13 @@ const Board = () => {
                 {board.map((row, rIndex) => (
                     <View key={rIndex} style={styles.row}>
                         {row.map((cell, cIndex) => {
+                            // Logic for lastMove highlight?
+                            // In online mode, we don't have history in Sync?
+                            // 'SYNC_GAME' in Reducer doesn't update history.
+                            // So lastMove might be stale or incorrect.
+                            // However, we re-render Board with new board prop.
+                            // Highlight might just disappear if history is empty.
+                            // That's acceptable for now.
                             const isLastMove = lastMoveKey === `${rIndex}-${cIndex}`;
                             return (
                             <TouchableOpacity
