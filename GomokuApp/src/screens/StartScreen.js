@@ -112,7 +112,7 @@ const StartScreen = ({ navigation }) => {
                                         </View>
                                     </View>
                                     <View style={styles.optionRow}>
-                                        <Text style={styles.label}>CPU Color: </Text>
+                                        <Text style={styles.label}>CPU Color (Black goes first): </Text>
                                         <View style={styles.options}>
                                             <TouchableOpacity onPress={() => setAiColor('white')} style={[styles.optionBtn, aiColor === 'white' && styles.selected]}>
                                                 <Text>White</Text>
