@@ -1,7 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Button, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { GameContext } from '../context/GameContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const logo = require('../../assets/icon.png');
 
 const StartScreen = ({ navigation }) => {
     const { state, dispatch, loadGame } = useContext(GameContext);
@@ -48,7 +50,8 @@ const StartScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Gomoku</Text>
+            <Image source={logo} style={styles.logo} />
+            <Text style={styles.title}>OpenGomoku</Text>
 
             <View style={styles.buttonContainer}>
                 <Button title="New Game" onPress={handleNewGame} />
@@ -150,6 +153,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#fff',
+    },
+    logo: {
+        width: 100,
+        height: 100,
+        marginBottom: 16,
+        resizeMode: 'contain',
     },
     title: {
         fontSize: 48,
