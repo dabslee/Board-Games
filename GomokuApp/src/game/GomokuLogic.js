@@ -84,9 +84,10 @@ const PATTERNS = {
     LIVE_4: /(?=(\.XXXX\.))/g,
 
     // Dead 4: Blocked one side or Gap (Forced response)
+    // Fixed: Escaped dots \. for empty spaces
     DEAD_4: [
-        /(?=(.XXXXO))/g, /(?=(OXXXX.))/g,
-        /(?=(.X\.XXX.))/g, /(?=(.XXX\.X.))/g, /(?=(.XX\.XX.))/g
+        /(?=(\.XXXXO))/g, /(?=(OXXXX\.))/g,
+        /(?=(\.X\.XXX\.))/g, /(?=(\.XXX\.X\.))/g, /(?=(\.XX\.XX\.))/g
     ],
 
     // Live 3: .XXX. (Can become Live 4)
@@ -98,7 +99,7 @@ const PATTERNS = {
 
     // Dead 3: Blocked one side
     DEAD_3: [
-        /(?=(.XXXO))/g, /(?=(OXXX.))/g
+        /(?=(\.XXXO))/g, /(?=(OXXX\.))/g
     ],
 
     // Live 2: .XX.
@@ -202,7 +203,7 @@ export const evaluateBoard = (board, color, opponentColor) => {
 };
 
 
-// --- Minimax with Alpha-Beta Pruning ---
+// --- Minimax with Alpha-Beta Pruning (Async) ---
 
 const getRelevantMoves = (board, validMoves) => {
      const size = board.length;
@@ -222,7 +223,11 @@ const getRelevantMoves = (board, validMoves) => {
     });
 };
 
-const minimax = (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor) => {
+const yieldToEventLoop = () => new Promise(resolve => setTimeout(resolve, 0));
+
+const minimax = async (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor, signal) => {
+    if (signal?.aborted) throw new Error('Aborted');
+
     if (depth === 0) {
         return evaluateBoard(board, aiColor, opponentColor);
     }
@@ -230,6 +235,9 @@ const minimax = (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor
     const validMoves = getValidMoves(board);
     const moves = getRelevantMoves(board, validMoves);
     if (moves.length === 0) return 0;
+
+    // Yield logic
+    if (depth >= 2) await yieldToEventLoop();
 
     if (isMaximizing) {
         let maxEval = -Infinity;
@@ -239,7 +247,9 @@ const minimax = (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor
                  board[move.row][move.col] = null;
                  return SCORES.WIN - (4 - depth);
             }
-            const evalScore = minimax(board, depth - 1, alpha, beta, false, aiColor, opponentColor);
+
+            const evalScore = await minimax(board, depth - 1, alpha, beta, false, aiColor, opponentColor, signal);
+
             board[move.row][move.col] = null;
             maxEval = Math.max(maxEval, evalScore);
             alpha = Math.max(alpha, evalScore);
@@ -254,7 +264,9 @@ const minimax = (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor
                  board[move.row][move.col] = null;
                  return -SCORES.WIN + (4 - depth);
             }
-            const evalScore = minimax(board, depth - 1, alpha, beta, true, aiColor, opponentColor);
+
+            const evalScore = await minimax(board, depth - 1, alpha, beta, true, aiColor, opponentColor, signal);
+
             board[move.row][move.col] = null;
             minEval = Math.min(minEval, evalScore);
             beta = Math.min(beta, evalScore);
@@ -265,7 +277,10 @@ const minimax = (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor
 };
 
 
-export const getBestMove = (board, aiColor, level) => {
+export const getBestMove = async (originalBoard, aiColor, level, signal) => {
+    // CLONE THE BOARD to avoid side-effects in React State
+    const board = originalBoard.map(row => [...row]);
+
     const validMoves = getValidMoves(board);
     if (validMoves.length === 0) return null;
 
@@ -283,6 +298,9 @@ export const getBestMove = (board, aiColor, level) => {
         let bestMoves = [];
 
         for (const move of candidates) {
+            if (signal?.aborted) throw new Error('Aborted');
+            await yieldToEventLoop(); // Yield for UI updates
+
             board[move.row][move.col] = aiColor;
 
             if (checkWin(board, move.row, move.col, aiColor)) {
@@ -318,13 +336,17 @@ export const getBestMove = (board, aiColor, level) => {
     let bestVal = -Infinity;
 
     for (const move of candidates) {
+        if (signal?.aborted) throw new Error('Aborted');
+        await yieldToEventLoop(); // Yield at top level loop
+
         board[move.row][move.col] = aiColor;
         if (checkWin(board, move.row, move.col, aiColor)) {
             board[move.row][move.col] = null;
             return move;
         }
 
-        const moveVal = minimax(board, depth - 1, -Infinity, Infinity, false, aiColor, opponentColor);
+        const moveVal = await minimax(board, depth - 1, -Infinity, Infinity, false, aiColor, opponentColor, signal);
+
         board[move.row][move.col] = null;
 
         if (moveVal > bestVal) {
