@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import Stone from './Stone';
 import { BOARD_SIZE } from '../game/GomokuLogic';
 import { GameContext } from '../context/GameContext';
@@ -8,8 +8,13 @@ const Board = () => {
     const { state, dispatch } = useContext(GameContext);
     const { board, winner, currentPlayer, gameMode, aiConfig } = state;
 
-    const screenWidth = Dimensions.get('window').width;
-    const cellSize = Math.floor((screenWidth - 40) / BOARD_SIZE); // 20 padding on each side
+    const { width, height } = useWindowDimensions();
+
+    // Calculate max available size allowing for padding and UI elements (approx 200px vertically for header/controls)
+    // In landscape, height is the constraint. In portrait, width is the constraint.
+    // 40px horizontal padding, 200px vertical buffer.
+    const maxBoardSize = Math.min(width - 40, height - 200);
+    const cellSize = Math.floor(maxBoardSize / BOARD_SIZE);
 
     const handlePress = (row, col) => {
         // Prevent moves if game over or cell occupied
