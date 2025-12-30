@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, Modal, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, Button, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { GameContext } from '../context/GameContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -10,6 +10,7 @@ const StartScreen = ({ navigation }) => {
 
     // New Game Settings
     const [mode, setMode] = useState('PvP'); // PvP or PvC
+    const [boardSize, setBoardSize] = useState(15);
     const [aiLevel, setAiLevel] = useState('easy');
     const [aiColor, setAiColor] = useState('white'); // AI plays White (2nd) by default
 
@@ -37,6 +38,7 @@ const StartScreen = ({ navigation }) => {
             type: 'START_GAME',
             payload: {
                 mode,
+                boardSize,
                 aiConfig: { level: aiLevel, color: aiColor },
                 startColor: 'black' // Standard Gomoku start
             }
@@ -66,46 +68,69 @@ const StartScreen = ({ navigation }) => {
             >
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
-                        <Text style={styles.modalText}>New Game Settings</Text>
+                        <ScrollView contentContainerStyle={styles.scrollContent}>
+                            <Text style={styles.modalText}>New Game Settings</Text>
 
-                        <View style={styles.optionRow}>
-                            <Text>Mode: </Text>
-                            <TouchableOpacity onPress={() => setMode('PvP')} style={[styles.optionBtn, mode === 'PvP' && styles.selected]}>
-                                <Text>2 Player</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setMode('PvC')} style={[styles.optionBtn, mode === 'PvC' && styles.selected]}>
-                                <Text>vs Computer</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {mode === 'PvC' && (
-                            <>
-                                <View style={styles.optionRow}>
-                                    <Text>Difficulty: </Text>
-                                    <TouchableOpacity onPress={() => setAiLevel('easy')} style={[styles.optionBtn, aiLevel === 'easy' && styles.selected]}>
-                                        <Text>Easy</Text>
+                            <View style={styles.optionRow}>
+                                <Text style={styles.label}>Mode: </Text>
+                                <View style={styles.options}>
+                                    <TouchableOpacity onPress={() => setMode('PvP')} style={[styles.optionBtn, mode === 'PvP' && styles.selected]}>
+                                        <Text>2 Player</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => setAiLevel('medium')} style={[styles.optionBtn, aiLevel === 'medium' && styles.selected]}>
-                                        <Text>Med</Text>
-                                    </TouchableOpacity>
-                                    {/* <TouchableOpacity onPress={() => setAiLevel('hard')} style={[styles.optionBtn, aiLevel === 'hard' && styles.selected]}>
-                                        <Text>Hard</Text>
-                                    </TouchableOpacity> */}
-                                </View>
-                                <View style={styles.optionRow}>
-                                    <Text>Computer plays: </Text>
-                                    <TouchableOpacity onPress={() => setAiColor('white')} style={[styles.optionBtn, aiColor === 'white' && styles.selected]}>
-                                        <Text>White (2nd)</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => setAiColor('black')} style={[styles.optionBtn, aiColor === 'black' && styles.selected]}>
-                                        <Text>Black (1st)</Text>
+                                    <TouchableOpacity onPress={() => setMode('PvC')} style={[styles.optionBtn, mode === 'PvC' && styles.selected]}>
+                                        <Text>vs CPU</Text>
                                     </TouchableOpacity>
                                 </View>
-                            </>
-                        )}
+                            </View>
 
-                        <Button title="Start" onPress={startGame} />
-                        <Button title="Cancel" onPress={() => setModalVisible(false)} color="red" />
+                            <View style={styles.optionRow}>
+                                <Text style={styles.label}>Board Size: </Text>
+                                <View style={styles.options}>
+                                    {[9, 13, 15, 19].map(size => (
+                                        <TouchableOpacity
+                                            key={size}
+                                            onPress={() => setBoardSize(size)}
+                                            style={[styles.optionBtn, boardSize === size && styles.selected]}
+                                        >
+                                            <Text>{size}x{size}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+
+                            {mode === 'PvC' && (
+                                <>
+                                    <View style={styles.optionRow}>
+                                        <Text style={styles.label}>Difficulty: </Text>
+                                        <View style={styles.options}>
+                                            <TouchableOpacity onPress={() => setAiLevel('easy')} style={[styles.optionBtn, aiLevel === 'easy' && styles.selected]}>
+                                                <Text>Easy</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity onPress={() => setAiLevel('medium')} style={[styles.optionBtn, aiLevel === 'medium' && styles.selected]}>
+                                                <Text>Med</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <View style={styles.optionRow}>
+                                        <Text style={styles.label}>CPU Color: </Text>
+                                        <View style={styles.options}>
+                                            <TouchableOpacity onPress={() => setAiColor('white')} style={[styles.optionBtn, aiColor === 'white' && styles.selected]}>
+                                                <Text>White</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity onPress={() => setAiColor('black')} style={[styles.optionBtn, aiColor === 'black' && styles.selected]}>
+                                                <Text>Black</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </>
+                            )}
+
+                            <View style={styles.actionButtons}>
+                                <Button title="Start" onPress={startGame} />
+                                <View style={{ width: 10 }} />
+                                <Button title="Cancel" onPress={() => setModalVisible(false)} color="red" />
+                            </View>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -136,10 +161,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)'
     },
     modalView: {
+        width: '90%',
         margin: 20,
         backgroundColor: "white",
         borderRadius: 20,
-        padding: 35,
+        padding: 20,
         alignItems: "center",
         shadowColor: "#000",
         shadowOffset: {
@@ -148,31 +174,48 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.25,
         shadowRadius: 4,
-        elevation: 5
+        elevation: 5,
+        maxHeight: '80%',
+    },
+    scrollContent: {
+        alignItems: 'center',
     },
     modalText: {
-        marginBottom: 15,
+        marginBottom: 20,
         textAlign: "center",
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold'
     },
     optionRow: {
+        width: '100%',
+        marginBottom: 20,
+        alignItems: 'center'
+    },
+    label: {
+        fontSize: 16,
+        marginBottom: 10,
+        fontWeight: '600'
+    },
+    options: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 15,
         flexWrap: 'wrap',
         justifyContent: 'center'
     },
     optionBtn: {
-        padding: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 5,
-        marginHorizontal: 5,
+        margin: 4,
     },
     selected: {
-        backgroundColor: '#ddd',
+        backgroundColor: '#e0e0e0',
         borderColor: '#333'
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        marginTop: 20,
     }
 });
 

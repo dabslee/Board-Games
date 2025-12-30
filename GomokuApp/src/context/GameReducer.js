@@ -1,7 +1,8 @@
-import { createBoard, checkWin, BOARD_SIZE } from '../game/GomokuLogic.js';
+import { createBoard, checkWin } from '../game/GomokuLogic.js';
 
 export const initialState = {
-    board: createBoard(),
+    boardSize: 15,
+    board: createBoard(15),
     history: [], // Array of moves {row, col, color}
     currentTurn: 0, // Points to the index in history for the current displayed state
     currentPlayer: 'black',
@@ -14,9 +15,11 @@ export const initialState = {
 export const gameReducer = (state, action) => {
     switch (action.type) {
         case 'START_GAME':
+            const size = action.payload.boardSize || 15;
             return {
                 ...initialState,
-                board: createBoard(),
+                boardSize: size,
+                board: createBoard(size),
                 gameMode: action.payload.mode, // 'PvP' or 'PvC'
                 aiConfig: action.payload.aiConfig || initialState.aiConfig,
                 currentPlayer: action.payload.startColor || 'black',
@@ -28,12 +31,13 @@ export const gameReducer = (state, action) => {
         case 'MAKE_MOVE': {
             const { row, col } = action.payload;
             const { board, currentPlayer, history, currentTurn } = state;
+            const size = board.length;
 
             // If we are looking at past history, making a move creates a new branch
             // We discard all history AFTER currentTurn
             const newHistory = history.slice(0, currentTurn);
 
-            const newBoard = createBoard();
+            const newBoard = createBoard(size);
             // Reconstruct board from newHistory to ensure clean state
             newHistory.forEach(move => {
                 newBoard[move.row][move.col] = move.color;
@@ -57,8 +61,9 @@ export const gameReducer = (state, action) => {
         }
         case 'JUMP_TO_TURN': {
             const turnIndex = action.payload;
-            const newBoard = createBoard();
-            const { history } = state;
+            const { board, history } = state;
+            const size = board.length;
+            const newBoard = createBoard(size);
 
             for (let i = 0; i < turnIndex; i++) {
                 const move = history[i];
@@ -69,21 +74,17 @@ export const gameReducer = (state, action) => {
             let winner = null;
             let nextPlayer = 'black'; // Default start
 
-            // Logic to determine next player and winner
             if (turnIndex > 0) {
                  const lastMove = history[turnIndex - 1];
                  const isWin = checkWin(newBoard, lastMove.row, lastMove.col, lastMove.color);
                  if (isWin) {
                      winner = lastMove.color;
-                     // If someone won, the current player conceptually stays on them (or irrelevant)
                      nextPlayer = lastMove.color;
                  } else {
                      nextPlayer = lastMove.color === 'black' ? 'white' : 'black';
                  }
             } else {
-                 // At turn 0
                  winner = null;
-                 // Assuming Black starts. If we stored startColor, we'd use that.
                  nextPlayer = 'black';
             }
 

@@ -1,39 +1,83 @@
 import React, { useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import Stone from './Stone';
-import { BOARD_SIZE } from '../game/GomokuLogic';
 import { GameContext } from '../context/GameContext';
+
+const STAR_POINTS = {
+    9: [[2, 2], [2, 6], [4, 4], [6, 2], [6, 6]],
+    13: [[3, 3], [3, 9], [6, 6], [9, 3], [9, 9]],
+    15: [[3, 3], [3, 11], [7, 7], [11, 3], [11, 11]],
+    19: [[3, 3], [3, 9], [3, 15], [9, 3], [9, 9], [9, 15], [15, 3], [15, 9], [15, 15]]
+};
 
 const Board = () => {
     const { state, dispatch } = useContext(GameContext);
     const { board, winner, currentPlayer, gameMode, aiConfig } = state;
+    const boardSize = board.length;
 
     const { width, height } = useWindowDimensions();
 
     // Calculate max available size allowing for padding and UI elements
-    // Increased buffer to 300px to ensure HistorySlider and controls are visible.
     const maxBoardSize = Math.min(width - 40, height - 300);
-    const cellSize = Math.floor(maxBoardSize / BOARD_SIZE);
+    const cellSize = Math.floor(maxBoardSize / boardSize);
+
+    // Calculate grid dimensions to ensure lines stop at the center of the first/last cells
+    const gridSize = (boardSize - 1) * cellSize;
+    const gridOffset = cellSize / 2;
 
     const handlePress = (row, col) => {
-        // Prevent moves if game over or cell occupied
         if (winner || board[row][col]) return;
-
-        // Prevent moves during AI turn in PvC
         if (gameMode === 'PvC' && currentPlayer === aiConfig.color) return;
-
         dispatch({ type: 'MAKE_MOVE', payload: { row, col } });
     };
 
+    const starPoints = STAR_POINTS[boardSize] || [];
+
     return (
         <View style={styles.container}>
-            <View style={[styles.board, { width: cellSize * BOARD_SIZE, height: cellSize * BOARD_SIZE }]}>
+            <View style={[styles.board, { width: cellSize * boardSize, height: cellSize * boardSize }]}>
                 {/* Grid Lines */}
-                {Array.from({ length: BOARD_SIZE }).map((_, i) => (
-                    <View key={`h-${i}`} style={[styles.lineH, { top: i * cellSize + cellSize / 2, width: cellSize * BOARD_SIZE }]} />
+                {/* Horizontal Lines */}
+                {Array.from({ length: boardSize }).map((_, i) => (
+                    <View
+                        key={`h-${i}`}
+                        style={[
+                            styles.lineH,
+                            {
+                                top: i * cellSize + cellSize / 2,
+                                width: gridSize,
+                                left: gridOffset
+                            }
+                        ]}
+                    />
                 ))}
-                {Array.from({ length: BOARD_SIZE }).map((_, i) => (
-                    <View key={`v-${i}`} style={[styles.lineV, { left: i * cellSize + cellSize / 2, height: cellSize * BOARD_SIZE }]} />
+                {/* Vertical Lines */}
+                {Array.from({ length: boardSize }).map((_, i) => (
+                    <View
+                        key={`v-${i}`}
+                        style={[
+                            styles.lineV,
+                            {
+                                left: i * cellSize + cellSize / 2,
+                                height: gridSize,
+                                top: gridOffset
+                            }
+                        ]}
+                    />
+                ))}
+
+                {/* Star Points */}
+                {starPoints.map(([r, c], i) => (
+                    <View
+                        key={`star-${i}`}
+                        style={[
+                            styles.starPoint,
+                            {
+                                top: r * cellSize + cellSize / 2 - 3, // 3 is half of 6px size
+                                left: c * cellSize + cellSize / 2 - 3,
+                            }
+                        ]}
+                    />
                 ))}
 
                 {/* Cells */}
@@ -79,13 +123,19 @@ const styles = StyleSheet.create({
         position: 'absolute',
         height: 1,
         backgroundColor: '#5d4037',
-        left: 0,
     },
     lineV: {
         position: 'absolute',
         width: 1,
         backgroundColor: '#5d4037',
-        top: 0,
+    },
+    starPoint: {
+        position: 'absolute',
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#5d4037',
+        zIndex: 1,
     }
 });
 

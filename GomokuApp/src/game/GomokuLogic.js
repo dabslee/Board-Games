@@ -1,25 +1,24 @@
 // GomokuLogic.js
 
-export const BOARD_SIZE = 15;
-
-export const createBoard = () => {
+export const createBoard = (size = 15) => {
     const board = [];
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        board[i] = Array(BOARD_SIZE).fill(null);
+    for (let i = 0; i < size; i++) {
+        board[i] = Array(size).fill(null);
     }
     return board;
 };
 
 // Check for win starting from (row, col) in direction (dr, dc)
 const checkDirection = (board, row, col, dr, dc, color) => {
+    const size = board.length;
     let count = 0;
 
     // Check forward
     let r = row;
     let c = col;
     while (
-        r >= 0 && r < BOARD_SIZE &&
-        c >= 0 && c < BOARD_SIZE &&
+        r >= 0 && r < size &&
+        c >= 0 && c < size &&
         board[r][c] === color
     ) {
         count++;
@@ -31,8 +30,8 @@ const checkDirection = (board, row, col, dr, dc, color) => {
     r = row - dr;
     c = col - dc;
     while (
-        r >= 0 && r < BOARD_SIZE &&
-        c >= 0 && c < BOARD_SIZE &&
+        r >= 0 && r < size &&
+        c >= 0 && c < size &&
         board[r][c] === color
     ) {
         count++;
@@ -59,9 +58,10 @@ export const checkWin = (board, row, col, color) => {
 };
 
 export const getValidMoves = (board) => {
+    const size = board.length;
     const moves = [];
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
+    for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
             if (board[i][j] === null) {
                 moves.push({ row: i, col: j });
             }
@@ -72,6 +72,7 @@ export const getValidMoves = (board) => {
 
 // Simple heuristic AI
 export const getBestMove = (board, aiColor, level) => {
+    const size = board.length;
     const validMoves = getValidMoves(board);
     if (validMoves.length === 0) return null;
 
@@ -84,9 +85,6 @@ export const getBestMove = (board, aiColor, level) => {
     const opponentColor = aiColor === 'black' ? 'white' : 'black';
 
     // Medium: Block immediate threats (4 in a row, open 3) or win if possible
-    // This is a simplified version. A real minimax is better but expensive in JS without optimization.
-    // Let's implement a scoring system.
-
     let bestScore = -Infinity;
     let bestMoves = [];
 
@@ -96,24 +94,19 @@ export const getBestMove = (board, aiColor, level) => {
             for (let dc = -2; dc <= 2; dc++) {
                 const r = move.row + dr;
                 const c = move.col + dc;
-                if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r][c] !== null) {
+                if (r >= 0 && r < size && c >= 0 && c < size && board[r][c] !== null) {
                     return true;
                 }
             }
         }
         // If board is empty, center is relevant
-        if (validMoves.length === BOARD_SIZE * BOARD_SIZE) return move.row === 7 && move.col === 7;
+        const center = Math.floor(size / 2);
+        if (validMoves.length === size * size) return move.row === center && move.col === center;
         return false;
     });
 
     // If no relevant moves found (shouldn't happen unless empty), pick random from all valid
     const candidates = relevantMoves.length > 0 ? relevantMoves : validMoves;
-
-    // If it's hard, we want to look deeper, but JS single thread might be slow.
-    // For now, let's stick to a strong heuristic evaluation for 'medium' and 'hard'
-    // where hard just has better weights or looks one step ahead.
-
-    // Let's implement a decent heuristic function for a single position
 
     for (const move of candidates) {
         // Temporarily make the move
@@ -123,7 +116,6 @@ export const getBestMove = (board, aiColor, level) => {
 
         // Also check if this move blocks an opponent win
         board[move.row][move.col] = opponentColor;
-        const blockScore = evaluateBoard(board, opponentColor, aiColor);
 
         // If we can win, that's top priority
         if (checkWin(board, move.row, move.col, aiColor)) {
@@ -131,12 +123,7 @@ export const getBestMove = (board, aiColor, level) => {
         }
 
         // If opponent can win, we MUST block.
-        // Blocking is high priority, but winning is higher.
-        // checkWin uses the stone at r,c.
-        // We put opponent stone there to see if they would win.
         else if (checkWin(board, move.row, move.col, opponentColor)) {
-             // If this move blocks a win, it's very valuable.
-             // We give it a high score but less than a guaranteed win for us.
              score += 50000;
         }
 
@@ -156,18 +143,5 @@ export const getBestMove = (board, aiColor, level) => {
 
 // Evaluate board for a specific player
 const evaluateBoard = (board, myColor, oppColor) => {
-    // This function would iterate over the board and score lines.
-    // For brevity/performance in this context, we will do a localized score
-    // or just rely on the win/block checks above for now.
-
-    // However, to make 'Medium' and 'Hard' playable, we need some aggression.
-    // Random valid move is 'Easy'.
-    // Win or Block Win is 'Medium'.
-    // 'Hard' should try to create threats.
-
-    // Since the prompt asks for different levels, I'll keep the logic in getBestMove simple for now:
-    // The current loop in getBestMove effectively prioritizes winning and blocking.
-    // To make it smarter, we'd add scores for 3-in-a-rows, etc.
-
     return Math.random(); // Add some noise for tie-breaking
 };
