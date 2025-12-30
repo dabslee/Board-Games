@@ -109,6 +109,12 @@ const StartScreen = ({ navigation }) => {
                                             <TouchableOpacity onPress={() => setAiLevel('medium')} style={[styles.optionBtn, aiLevel === 'medium' && styles.selected]}>
                                                 <Text>Med</Text>
                                             </TouchableOpacity>
+                                            <TouchableOpacity onPress={() => setAiLevel('hard')} style={[styles.optionBtn, aiLevel === 'hard' && styles.selected]}>
+                                                <Text>Hard</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity onPress={() => setAiLevel('extreme')} style={[styles.optionBtn, aiLevel === 'extreme' && styles.selected]}>
+                                                <Text>Extreme</Text>
+                                            </TouchableOpacity>
                                         </View>
                                     </View>
                                     <View style={styles.optionRow}>
