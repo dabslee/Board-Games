@@ -10,10 +10,9 @@ const Board = () => {
 
     const { width, height } = useWindowDimensions();
 
-    // Calculate max available size allowing for padding and UI elements (approx 200px vertically for header/controls)
-    // In landscape, height is the constraint. In portrait, width is the constraint.
-    // 40px horizontal padding, 200px vertical buffer.
-    const maxBoardSize = Math.min(width - 40, height - 200);
+    // Calculate max available size allowing for padding and UI elements
+    // Increased buffer to 300px to ensure HistorySlider and controls are visible.
+    const maxBoardSize = Math.min(width - 40, height - 300);
     const cellSize = Math.floor(maxBoardSize / BOARD_SIZE);
 
     const handlePress = (row, col) => {
