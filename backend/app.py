@@ -30,9 +30,15 @@ def generate_code():
 
 @app.route('/game', methods=['POST'])
 def create_game():
+    data = request.json or {}
+    size = data.get('size', 15)
+    # Validate size?
+    if size not in [9, 13, 15, 19]:
+        size = 15
+
     code = generate_code()
     GAMES[code] = {
-        "board": create_board(),
+        "board": create_board(size),
         "turn": "black",
         "players": {"black": "host"},
         "status": "waiting",

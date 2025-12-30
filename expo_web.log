@@ -22,3 +22,6 @@ Web Bundled 37ms index.js (1 module)
 Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
 Web Bundled 129ms index.js (1 module)
  LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 1594ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console

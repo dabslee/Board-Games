@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GameProvider } from './src/context/GameContext';
 import StartScreen from './src/screens/StartScreen';
 import GameScreen from './src/screens/GameScreen';
-import OnlineMenuScreen from './src/screens/OnlineMenuScreen';
 import OnlineGameScreen from './src/screens/OnlineGameScreen';
 
 const Stack = createNativeStackNavigator();
@@ -16,7 +15,6 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Start" component={StartScreen} />
           <Stack.Screen name="Game" component={GameScreen} />
-          <Stack.Screen name="OnlineMenu" component={OnlineMenuScreen} />
           <Stack.Screen name="OnlineGame" component={OnlineGameScreen} />
         </Stack.Navigator>
       </NavigationContainer>

@@ -1,20 +1,27 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, Button, StyleSheet, Modal, TouchableOpacity, ScrollView, Image, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { GameContext } from '../context/GameContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BACKEND_URL } from '../config';
 
 const logo = require('../../assets/icon.png');
 
 const StartScreen = ({ navigation }) => {
     const { state, dispatch, loadGame } = useContext(GameContext);
     const [hasSavedGame, setHasSavedGame] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
+
+    // Modal State
+    const [modalMode, setModalMode] = useState('none'); // 'none', 'new', 'join'
 
     // New Game Settings
-    const [mode, setMode] = useState('PvP'); // PvP or PvC
+    const [mode, setMode] = useState('PvP'); // PvP, PvC, Online
     const [boardSize, setBoardSize] = useState(15);
     const [aiLevel, setAiLevel] = useState('easy');
     const [aiColor, setAiColor] = useState('white'); // AI plays White (2nd) by default
+
+    // Join Game Settings
+    const [joinCode, setJoinCode] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         // Check if saved game exists
@@ -31,21 +38,81 @@ const StartScreen = ({ navigation }) => {
     };
 
     const handleNewGame = () => {
-        setModalVisible(true);
+        setModalMode('new');
     };
 
-    const startGame = () => {
-        setModalVisible(false);
-        dispatch({
-            type: 'START_GAME',
-            payload: {
-                mode,
-                boardSize,
-                aiConfig: { level: aiLevel, color: aiColor },
-                startColor: 'black' // Standard Gomoku start
+    const handleJoinGame = () => {
+        setModalMode('join');
+    };
+
+    const startNewGame = async () => {
+        if (mode === 'Online') {
+            setLoading(true);
+            try {
+                const response = await fetch(`${BACKEND_URL}/game`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ size: boardSize })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    setModalMode('none');
+                    navigation.navigate('OnlineGame', {
+                        code: data.game_code,
+                        playerColor: data.color, // 'black'
+                        playerId: data.player_id, // 'host'
+                    });
+                } else {
+                    Alert.alert("Error", "Failed to create game");
+                }
+            } catch (error) {
+                Alert.alert("Error", "Could not connect to server");
+                console.error(error);
+            } finally {
+                setLoading(false);
             }
-        });
-        navigation.navigate('Game');
+        } else {
+            setModalMode('none');
+            dispatch({
+                type: 'START_GAME',
+                payload: {
+                    mode,
+                    boardSize,
+                    aiConfig: { level: aiLevel, color: aiColor },
+                    startColor: 'black' // Standard Gomoku start
+                }
+            });
+            navigation.navigate('Game');
+        }
+    };
+
+    const joinGame = async () => {
+        if (!joinCode) {
+            Alert.alert("Error", "Please enter a game code");
+            return;
+        }
+        setLoading(true);
+        try {
+            const response = await fetch(`${BACKEND_URL}/game/${joinCode.toUpperCase()}/join`, {
+                method: 'POST',
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setModalMode('none');
+                navigation.navigate('OnlineGame', {
+                    code: joinCode.toUpperCase(),
+                    playerColor: data.color, // 'white'
+                    playerId: data.player_id, // 'guest'
+                });
+            } else {
+                Alert.alert("Error", data.error || "Failed to join game");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Could not connect to server");
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -56,20 +123,21 @@ const StartScreen = ({ navigation }) => {
             <View style={styles.buttonContainer}>
                 <Button title="New Game" onPress={handleNewGame} />
                 <View style={{ height: 20 }} />
-                <Button title="Online Multiplayer" onPress={() => navigation.navigate('OnlineMenu')} />
-                <View style={{ height: 20 }} />
                 <Button
                     title="Continue"
                     onPress={handleContinue}
                     disabled={!hasSavedGame}
                 />
+                <View style={{ height: 20 }} />
+                <Button title="Join Game" onPress={handleJoinGame} />
             </View>
 
+            {/* New Game Modal */}
             <Modal
                 animationType="slide"
                 transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                visible={modalMode === 'new'}
+                onRequestClose={() => setModalMode('none')}
             >
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
@@ -84,6 +152,9 @@ const StartScreen = ({ navigation }) => {
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => setMode('PvC')} style={[styles.optionBtn, mode === 'PvC' && styles.selected]}>
                                         <Text>vs CPU</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => setMode('Online')} style={[styles.optionBtn, mode === 'Online' && styles.selected]}>
+                                        <Text>Online</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -136,12 +207,48 @@ const StartScreen = ({ navigation }) => {
                                 </>
                             )}
 
+                            {mode === 'Online' && (
+                                <Text style={{marginBottom: 10, color: '#666'}}>
+                                    You will create a game and receive a code to share.
+                                </Text>
+                            )}
+
                             <View style={styles.actionButtons}>
-                                <Button title="Start" onPress={startGame} />
+                                {loading ? <ActivityIndicator color="#0000ff" /> : <Button title="Start" onPress={startNewGame} />}
                                 <View style={{ width: 10 }} />
-                                <Button title="Cancel" onPress={() => setModalVisible(false)} color="red" />
+                                <Button title="Cancel" onPress={() => setModalMode('none')} color="red" />
                             </View>
                         </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Join Game Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalMode === 'join'}
+                onRequestClose={() => setModalMode('none')}
+            >
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                         <Text style={styles.modalText}>Join Online Game</Text>
+
+                         <Text style={styles.label}>Enter Game Code:</Text>
+                         <TextInput
+                            style={styles.input}
+                            value={joinCode}
+                            onChangeText={setJoinCode}
+                            placeholder="ABCDE"
+                            autoCapitalize="characters"
+                            maxLength={5}
+                        />
+
+                        <View style={styles.actionButtons}>
+                            {loading ? <ActivityIndicator color="#0000ff" /> : <Button title="Join" onPress={joinGame} />}
+                            <View style={{ width: 10 }} />
+                            <Button title="Cancel" onPress={() => setModalMode('none')} color="red" />
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -233,7 +340,18 @@ const styles = StyleSheet.create({
     actionButtons: {
         flexDirection: 'row',
         marginTop: 20,
-    }
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        padding: 10,
+        width: 150,
+        textAlign: 'center',
+        fontSize: 24,
+        marginBottom: 20,
+        letterSpacing: 2,
+    },
 });
 
 export default StartScreen;
