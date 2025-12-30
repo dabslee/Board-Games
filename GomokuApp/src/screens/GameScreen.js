@@ -1,11 +1,11 @@
 import React, { useContext, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert, ActivityIndicator } from 'react-native';
 import { GameContext } from '../context/GameContext';
 import Board from '../components/Board';
 import HistorySlider from '../components/HistorySlider';
 
 const GameScreen = ({ navigation }) => {
-    const { state, dispatch } = useContext(GameContext);
+    const { state, dispatch, isThinking, cancelAI } = useContext(GameContext);
     const { currentPlayer, winner, gameMode, history, currentTurn } = state;
 
     useEffect(() => {
@@ -18,20 +18,34 @@ const GameScreen = ({ navigation }) => {
         }
     }, [winner]);
 
+    // Handle back navigation to abort AI
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+             // If AI is thinking, we should cancel it.
+             // The context might stay alive, so explicit cancel is good practice.
+             cancelAI();
+        });
+        return unsubscribe;
+    }, [navigation, cancelAI]);
+
     const handleUndo = () => dispatch({ type: 'UNDO' });
     const handleRedo = () => dispatch({ type: 'REDO' });
 
     // Determine if actions are possible
+    // Allow undo even if thinking (to abort)
     const canUndo = currentTurn > 0;
-    const canRedo = currentTurn < history.length;
+    const canRedo = currentTurn < history.length && !isThinking; // Don't redo while thinking?
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Button title="Back" onPress={() => navigation.goBack()} />
-                <Text style={styles.turnText}>
-                    {winner ? `Winner: ${winner}` : `Turn: ${currentPlayer}`}
-                </Text>
+                <View style={styles.turnContainer}>
+                     <Text style={styles.turnText}>
+                        {winner ? `Winner: ${winner}` : `Turn: ${currentPlayer}`}
+                    </Text>
+                    {isThinking && <ActivityIndicator size="small" color="#000" style={styles.loader} />}
+                </View>
                 <View style={{width: 50}} />
             </View>
 
@@ -62,10 +76,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         marginBottom: 20,
     },
+    turnContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     turnText: {
         fontSize: 20,
         fontWeight: 'bold',
         textTransform: 'capitalize'
+    },
+    loader: {
+        marginLeft: 10,
     },
     controls: {
         flexDirection: 'row',
