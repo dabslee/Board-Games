@@ -98,8 +98,26 @@ export const gameReducer = (state, action) => {
         }
         case 'UNDO':
             if (state.currentTurn > 0) {
-                 // Delegates to JUMP_TO_TURN logic
-                 return gameReducer(state, { type: 'JUMP_TO_TURN', payload: state.currentTurn - 1 });
+                 let stepsToUndo = 1;
+                 // If PvC and it's currently the Player's turn (meaning AI just moved last),
+                 // we undo 2 steps to get back to Player's previous state.
+                 // NOTE: If it is AI's turn (Player just moved), currentPlayer == AI Color.
+                 // In that case, we only undo 1 step (Player's move).
+                 if (state.gameMode === 'PvC' && state.currentPlayer !== state.aiConfig.color) {
+                     // Check if we actually HAVE 2 steps to undo
+                     if (state.currentTurn >= 2) {
+                         stepsToUndo = 2;
+                     } else {
+                         // If only 1 move happened (e.g. Player moved, then AI moved? No, Player starts black)
+                         // If Player=Black, AI=White.
+                         // T1: Black Move. Turn=1. Player=White.
+                         // T2: White Move. Turn=2. Player=Black.
+                         // Undo at Turn=2 -> Go to Turn 0.
+                         stepsToUndo = state.currentTurn; // Go back to 0
+                     }
+                 }
+
+                 return gameReducer(state, { type: 'JUMP_TO_TURN', payload: state.currentTurn - stepsToUndo });
             }
             return state;
         case 'REDO':
