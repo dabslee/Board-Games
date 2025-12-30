@@ -56,6 +56,8 @@ const StartScreen = ({ navigation }) => {
             <View style={styles.buttonContainer}>
                 <Button title="New Game" onPress={handleNewGame} />
                 <View style={{ height: 20 }} />
+                <Button title="Online Multiplayer" onPress={() => navigation.navigate('OnlineMenu')} />
+                <View style={{ height: 20 }} />
                 <Button
                     title="Continue"
                     onPress={handleContinue}

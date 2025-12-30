@@ -125,6 +125,19 @@ export const gameReducer = (state, action) => {
                  return gameReducer(state, { type: 'JUMP_TO_TURN', payload: state.currentTurn + 1 });
             }
             return state;
+        case 'SYNC_GAME':
+            return {
+                ...state,
+                board: action.payload.board,
+                currentPlayer: action.payload.currentPlayer,
+                winner: action.payload.winner,
+                // History is not maintained in synced games for simplicity
+            };
+        case 'SET_GAME_MODE':
+            return {
+                ...state,
+                gameMode: action.payload,
+            };
         default:
             return state;
     }
