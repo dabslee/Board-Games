@@ -13,7 +13,7 @@ const STAR_POINT_SIZE = 6;
 
 const Board = () => {
     const { state, dispatch } = useContext(GameContext);
-    const { board, winner, currentPlayer, gameMode, aiConfig } = state;
+    const { board, winner, currentPlayer, gameMode, aiConfig, history, currentTurn } = state;
     const boardSize = board.length;
 
     const { width, height } = useWindowDimensions();
@@ -34,6 +34,8 @@ const Board = () => {
 
     const starPoints = STAR_POINTS[boardSize] || [];
     const starPointLookup = new Set(starPoints.map(([r, c]) => `${r}-${c}`));
+    const lastMove = history[currentTurn - 1];
+    const lastMoveKey = lastMove ? `${lastMove.row}-${lastMove.col}` : null;
 
     return (
         <View style={styles.container}>
@@ -71,7 +73,9 @@ const Board = () => {
                 {/* Cells */}
                 {board.map((row, rIndex) => (
                     <View key={rIndex} style={styles.row}>
-                        {row.map((cell, cIndex) => (
+                        {row.map((cell, cIndex) => {
+                            const isLastMove = lastMoveKey === `${rIndex}-${cIndex}`;
+                            return (
                             <TouchableOpacity
                                 key={`${rIndex}-${cIndex}`}
                                 style={[styles.cell, { width: cellSize, height: cellSize }]}
@@ -93,9 +97,10 @@ const Board = () => {
                                         ]}
                                     />
                                 )}
-                                <Stone color={cell} size={cellSize * 0.8} />
+                                <Stone color={cell} size={cellSize * 0.8} isLastMove={isLastMove} />
                             </TouchableOpacity>
-                        ))}
+                            );
+                        })}
                     </View>
                 ))}
             </View>
@@ -120,6 +125,7 @@ const styles = StyleSheet.create({
     cell: {
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'relative',
         zIndex: 2,
     },
     lineH: {
