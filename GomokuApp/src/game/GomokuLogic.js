@@ -256,7 +256,7 @@ const getNeighborScore = (board, r, c) => {
 
 const yieldToEventLoop = () => new Promise(resolve => setTimeout(resolve, 0));
 
-const minimax = async (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor, signal) => {
+const minimax = async (board, depth, alpha, beta, isMaximizing, aiColor, opponentColor, signal, maxDepth = depth) => {
     if (signal?.aborted) throw new Error('Aborted');
 
     // Transposition Table Check?
@@ -279,10 +279,10 @@ const minimax = async (board, depth, alpha, beta, isMaximizing, aiColor, opponen
             board[move.row][move.col] = aiColor;
             if (checkWin(board, move.row, move.col, aiColor)) {
                  board[move.row][move.col] = null;
-                 return SCORES.WIN - (4 - depth);
+                 return SCORES.WIN - (maxDepth - depth);
             }
 
-            const evalScore = await minimax(board, depth - 1, alpha, beta, false, aiColor, opponentColor, signal);
+            const evalScore = await minimax(board, depth - 1, alpha, beta, false, aiColor, opponentColor, signal, maxDepth);
 
             board[move.row][move.col] = null;
             maxEval = Math.max(maxEval, evalScore);
@@ -296,10 +296,10 @@ const minimax = async (board, depth, alpha, beta, isMaximizing, aiColor, opponen
             board[move.row][move.col] = opponentColor;
              if (checkWin(board, move.row, move.col, opponentColor)) {
                  board[move.row][move.col] = null;
-                 return -SCORES.WIN + (4 - depth);
+                 return -SCORES.WIN + (maxDepth - depth);
             }
 
-            const evalScore = await minimax(board, depth - 1, alpha, beta, true, aiColor, opponentColor, signal);
+            const evalScore = await minimax(board, depth - 1, alpha, beta, true, aiColor, opponentColor, signal, maxDepth);
 
             board[move.row][move.col] = null;
             minEval = Math.min(minEval, evalScore);
@@ -358,19 +358,13 @@ export const getBestMove = async (originalBoard, aiColor, level, signal) => {
     const validMoves = getValidMoves(board);
     if (validMoves.length === 0) return null;
 
-    if (level === 'easy') {
-        const randomIndex = Math.floor(Math.random() * validMoves.length);
-        return validMoves[randomIndex];
-    }
-
     const opponentColor = aiColor === 'black' ? 'white' : 'black';
     const moves = getRelevantMoves(board, validMoves);
     const candidates = moves.length > 0 ? moves : validMoves;
 
-    if (level === 'medium') {
-        // ... (Medium logic preserved as is or optimized?)
-        // Let's use the same candidates logic but simplified loop
-         let bestScore = -Infinity;
+    if (level === 'easy') {
+        // Heuristic search without full minimax
+        let bestScore = -Infinity;
         let bestMoves = [];
 
         for (const move of candidates) {
@@ -402,9 +396,11 @@ export const getBestMove = async (originalBoard, aiColor, level, signal) => {
         return bestMoves[randomBestIndex];
     }
 
-    // Hard / Extreme
-    let depth = 2;
-    if (level === 'extreme') depth = 3;
+    // Medium / Hard / Extreme (minimax)
+    let depth = 2; // medium by default
+    if (level === 'hard') depth = 3;
+    if (level === 'extreme') depth = 4;
+    const searchDepth = depth - 1; // one ply is spent placing the candidate move
 
     let bestMove = null;
     let bestVal = -Infinity;
@@ -419,7 +415,7 @@ export const getBestMove = async (originalBoard, aiColor, level, signal) => {
             return move;
         }
 
-        const moveVal = await minimax(board, depth - 1, -Infinity, Infinity, false, aiColor, opponentColor, signal);
+        const moveVal = await minimax(board, searchDepth, -Infinity, Infinity, false, aiColor, opponentColor, signal, searchDepth);
 
         board[move.row][move.col] = null;
 
