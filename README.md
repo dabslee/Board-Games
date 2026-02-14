@@ -1,4 +1,4 @@
-# Gomoku React Native App
+# Gomoku
 
 <img src="https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=white"> <img src="https://img.shields.io/badge/Flask-3.1.2-black?style=flat-square&logo=flask&logoColor=white">
 
