@@ -1,1 +1,1 @@
-export const BACKEND_URL = "http://games.brandonssandbox.com";
+export const BACKEND_URL = "https://games.brandonssandbox.com";
