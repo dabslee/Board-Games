@@ -5,8 +5,8 @@
 A simple Gomoku (Five in a Row) game built with React Native and Expo. Supports online multiplayer via a lightweight Flask backend.
 
 <p align="center">
-  <img src="Screenshots/mobile_home_bordered.png" alt="Home screen" width="320">
-  <img src="Screenshots/mobile_game_bordered.png" alt="Game screen" width="320">
+  <img src="Screenshots/mobile_home_bordered.png" alt="Home screen" width="200">
+  <img src="Screenshots/mobile_game_bordered.png" alt="Game screen" width="200">
 </p>
 
 ## Features
@@ -18,4 +18,4 @@ A simple Gomoku (Five in a Row) game built with React Native and Expo. Supports 
 
 ## Installation
 
-You can install the game on Android devices from the APK file in `GomokuApp/releases/GomokuApp.apk`.
+You can install the game on Android devices from the APK file in [`GomokuApp/releases/GomokuApp.apk`](https://github.com/dabslee/Board-Games/raw/refs/heads/master/GomokuApp/releases/GomokuApp.apk).
