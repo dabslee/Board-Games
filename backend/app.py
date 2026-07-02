@@ -1,10 +1,25 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+from werkzeug.utils import safe_join
+import os
 import string
 import random
 
 app = Flask(__name__)
 CORS(app)
+
+# Static Expo web export of the Gomoku app (built into the Docker image)
+WEB_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'webdist')
+
+@app.route('/Gomoku')
+@app.route('/Gomoku/')
+@app.route('/Gomoku/<path:path>')
+def serve_gomoku(path='index.html'):
+    target = safe_join(WEB_DIST, path)
+    if target and os.path.isfile(target):
+        return send_from_directory(WEB_DIST, path)
+    # SPA fallback: unknown sub-paths get the app shell
+    return send_from_directory(WEB_DIST, 'index.html')
 
 # Store games in memory
 # Structure:

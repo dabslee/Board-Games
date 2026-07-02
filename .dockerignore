@@ -1,0 +1,11 @@
+.git/
+GomokuApp/node_modules/
+GomokuApp/dist/
+GomokuApp/.expo/
+GomokuApp/android/
+GomokuApp/ios/
+backend/venv/
+*.log
+*.bak.*
+__pycache__/
+*.apk

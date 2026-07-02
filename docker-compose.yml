@@ -1,6 +1,8 @@
 services:
   api:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: board-games-api
     restart: unless-stopped
     ports:

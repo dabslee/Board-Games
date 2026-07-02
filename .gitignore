@@ -40,3 +40,5 @@ expo_web.log
 
 # typescript
 *.tsbuildinfo
+# Expo web export copied into the backend image
+backend/webdist/
